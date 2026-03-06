@@ -36,7 +36,7 @@ main :: proc() {
 	// Copy base and core to project directory
 	proc_desc := os.Process_Desc{}
 	proc_desc.command = {"odin", "root"}
-	state, stdout, stderr, exec_err := os.process_exec(proc_desc, context.temp_allocator)
+	_, stdout, _, exec_err := os.process_exec(proc_desc, context.temp_allocator)
 	if exec_err != nil {
 		fmt.panicf("ERR run `odin root`: %v", exec_err)
 	}
@@ -54,7 +54,7 @@ main :: proc() {
 	// .git
 	git_exec := os.Process_Desc{}
 	git_exec.command = {"git", "init"}
-	state, stdout, _, exec_err = os.process_exec(git_exec, context.temp_allocator)
+	_, stdout, _, exec_err = os.process_exec(git_exec, context.temp_allocator)
 
 	strings.write_string(&sb, "build/")
 	strings.write_string(&sb, "\n")
