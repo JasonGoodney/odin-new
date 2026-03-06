@@ -22,6 +22,7 @@ main :: proc() {
 		if mkdir_err != nil {
 			fmt.panicf("ERR make project directory: %v", mkdir_err)
 		}
+		fmt.printfln("Created project: %s", project_name)
 	}
 
 	// Change to project directory
@@ -32,6 +33,7 @@ main :: proc() {
 	f, err := os.open("main.odin", {.Create, .Write, .Trunc})
 	os.write_string(f, main_contents)
 	os.close(f)
+	fmt.println("Create main.odin")
 
 	// Copy base and core to project directory
 	proc_desc := os.Process_Desc{}
@@ -41,21 +43,30 @@ main :: proc() {
 		fmt.panicf("ERR run `odin root`: %v", exec_err)
 	}
 	odinroot := strings.clone_from_bytes(stdout)
+	fmt.printfln("Found `odin` at %s", odinroot)
 
-	if !os.is_directory("odin") {
-		os.make_directory("odin")
+	project_rel_odin_path := "odin"
+	if !os.is_directory(project_rel_odin_path) {
+		os.make_directory(project_rel_odin_path)
 	}
-	project_odin_path := strings.join({project_name, "odin"}, "/")
-	base_package_path := strings.join({odinroot, "base"}, "/")
-	core_package_path := strings.join({odinroot, "core"}, "/")
-	os.copy_directory_all(project_odin_path, base_package_path)
-	os.copy_directory_all(project_odin_path, core_package_path)
+	base_package_path := strings.concatenate({odinroot, "base"})
+	core_package_path := strings.concatenate({odinroot, "core"})
+	copy_err := os.copy_directory_all(project_rel_odin_path, base_package_path)
+	if copy_err == nil {
+		fmt.println("Copied in odin/base")
+	} else {
+		fmt.panicf("ERR copy `%s` to `%s`: %v", base_package_path, project_rel_odin_path, copy_err)
+	}
+	copy_err = os.copy_directory_all(project_rel_odin_path, core_package_path)
+	if copy_err == nil {
+		fmt.println("Copied in odin/core")
+	}
 
 	// .git
 	git_exec := os.Process_Desc{}
 	git_exec.command = {"git", "init"}
 	_, stdout, _, exec_err = os.process_exec(git_exec, context.temp_allocator)
-
+	fmt.println("Initialized git")
 	strings.write_string(&sb, "build/")
 	strings.write_string(&sb, "\n")
 	strings.write_string(&sb, "odin/")
@@ -66,6 +77,7 @@ main :: proc() {
 	os.write_string(f, strings.to_string(sb))
 	os.close(f)
 	strings.builder_reset(&sb)
+	fmt.println("Added gitignore")
 
 
 	// Run script
